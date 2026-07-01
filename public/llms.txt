@@ -1,0 +1,33 @@
+# SalaryCalculator.sg
+
+> Singapore Salary Calculator for 2026 — Calculate take-home pay after CPF and income tax.
+
+## About
+SalaryCalculator.sg is a free online tool that calculates Singapore take-home salary after CPF (Central Provident Fund) contributions and income tax for Year of Assessment 2026.
+
+## Features
+- Gross-to-net salary calculation
+- CPF contribution breakdown (Ordinary Account, Special Account, MediSave Account)
+- Progressive income tax calculation with YA2026 brackets
+- Support for Singapore Citizens, Permanent Residents (1st/2nd/3rd year+), and Foreigners
+- Annual bonus / AWS handling with Additional Wage ceiling
+- CPF Ordinary Wage ceiling ($6,800/month)
+- Tax reliefs: Earned Income Relief, CPF Relief, NSman Relief
+- Employer cost calculation
+
+## Key Data Points
+- CPF rates (Citizen, age ≤55): Employee 20%, Employer 17%
+- OW Ceiling: $6,800/month
+- AW Ceiling: $102,000 - annual OW subject to CPF
+- Tax-free threshold: First $20,000
+- Top marginal tax rate: 24% (above $1,000,000)
+
+## Pages
+- [Calculator](https://salarycalculator.sg/)
+- [FAQ](https://salarycalculator.sg/faq/)
+- [Legal](https://salarycalculator.sg/legal/)
+- [Privacy](https://salarycalculator.sg/privacy/)
+
+## Sources
+- CPF Board: https://www.cpf.gov.sg
+- IRAS: https://www.iras.gov.sg

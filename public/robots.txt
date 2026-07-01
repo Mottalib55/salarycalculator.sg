@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://salarycalculator.sg/sitemap-index.xml
