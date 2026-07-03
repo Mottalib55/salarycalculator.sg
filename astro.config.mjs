@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  site: 'https://salarycalculator.sg',
+  trailingSlash: 'always',  site: 'https://salarycalculator.sg',
   integrations: [react(), sitemap()],
   vite: { plugins: [tailwindcss()] },
 });

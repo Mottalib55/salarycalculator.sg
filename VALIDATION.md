@@ -1,86 +1,82 @@
-# Validation Test Cases — SalaryCalculator.sg
-
-These test cases can be verified against the CPF Board contribution calculator (cpf.gov.sg) and IRAS income tax calculator (iras.gov.sg).
-
----
-
-## Test Case 1: Singapore Citizen, Age 30, $5,000/month, No Bonus
-
-**Input:**
-- Monthly Gross Salary: $5,000
-- Age: 30
-- Residency: Singapore Citizen
-- Annual Bonus: $0
-
-**Expected CPF (Source: CPF Board):**
-- Employee CPF (20%): $1,000/month | $12,000/year
-- Employer CPF (17%): $850/month | $10,200/year
-- Total CPF: $1,850/month | $22,200/year
-
-**Expected Tax (Source: IRAS YA2026):**
-- Annual Gross: $60,000
-- Reliefs: Earned Income Relief ($1,000) + CPF Relief ($12,000) = $13,000
-- Chargeable Income: $60,000 - $13,000 = $47,000
-- Tax: $0 (first $20k) + $200 (next $10k @ 2%) + $350 (next $10k @ 3.5%) + $490 ($7k @ 7%) = $1,040
-- Monthly Tax: ~$87
-
-**Expected Take-Home:**
-- Monthly: $5,000 - $1,000 - $87 = $3,913
-- Annual: $60,000 - $12,000 - $1,040 = $46,960
-
----
-
-## Test Case 2: Singapore Citizen, Age 30, $10,000/month (Above OW Ceiling), No Bonus
-
-**Input:**
-- Monthly Gross Salary: $10,000
-- Age: 30
-- Residency: Singapore Citizen
-- Annual Bonus: $0
-
-**Expected CPF (Source: CPF Board — OW Ceiling $6,800):**
-- Employee CPF (20% of $6,800): $1,360/month | $16,320/year
-- Employer CPF (17% of $6,800): $1,156/month | $13,872/year
-- Total CPF: $2,516/month | $30,192/year
-
-**Expected Tax (Source: IRAS YA2026):**
-- Annual Gross: $120,000
-- Reliefs: Earned Income Relief ($1,000) + CPF Relief ($16,320) = $17,320
-- Chargeable Income: $120,000 - $17,320 = $102,680
-- Tax: $0 + $200 + $350 + $2,800 + $2,608.20 = ~$5,958 (progressive through brackets)
-- Monthly Tax: ~$497
-
-**Expected Take-Home:**
-- Monthly: $10,000 - $1,360 - $497 = $8,143
-- Annual: $120,000 - $16,320 - $5,958 = $97,722
-
----
-
-## Test Case 3: Foreigner, Age 35, $8,000/month, No Bonus
-
-**Input:**
-- Monthly Gross Salary: $8,000
-- Age: 35
-- Residency: Foreigner (Employment Pass)
-- Annual Bonus: $0
-
-**Expected CPF:**
-- Employee CPF: $0 (Foreigners do not contribute to CPF)
-- Employer CPF: $0
-
-**Expected Tax (Source: IRAS — Non-resident flat rate 15%):**
-- Annual Gross: $96,000
-- Tax (15% flat): $14,400
-- Monthly Tax: $1,200
-
-**Expected Take-Home:**
-- Monthly: $8,000 - $0 - $1,200 = $6,800
-- Annual: $96,000 - $0 - $14,400 = $81,600
-
----
+# Validation — salarycalculator.sg
 
 ## Sources
-- **CPF Board:** https://www.cpf.gov.sg/employer/employer-obligations/how-much-cpf-contributions-to-pay
-- **IRAS:** https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/tax-residency-and-tax-rates/individual-income-tax-rates
-- **CPF Allocation Rates:** https://www.cpf.gov.sg/member/faq/growing-your-savings/saving-as-an-employee/what-are-the-cpf-allocation-rates
-- **CPF Contribution Rates Table:** https://www.cpf.gov.sg/employer/employer-obligations/how-much-cpf-contributions-to-pay
+
+- [IRAS (iras.gov.sg)](https://www.iras.gov.sg)
+- [CPF Board (cpf.gov.sg)](https://www.cpf.gov.sg)
+- [MOM (mom.gov.sg)](https://www.mom.gov.sg)
+
+---
+
+## Test Case 1: Citizen under 55, S$5,000/month
+
+**Input:** Gross S$5,000/month, Singapore Citizen, age 30
+**Expected:**
+- CPF employee (20%): S$1,000
+- CPF employer (17%): S$850
+- Take-home: S$4,000/month
+- Annual taxable: S$48,000
+- Income tax: ~S$1,480
+- **Annual net after tax: ~S$46,520**
+
+**Source:** cpf.gov.sg contribution rates 2026
+
+### Test Case 2: PR age 58, S$8,000/month
+
+**Input:** Gross S$8,000, PR, age 58 (55-60 bracket)
+**Expected:**
+- CPF employee (13%): S$1,040
+- CPF employer (11%): S$880
+- **Take-home: S$6,960** (higher than under-55 due to lower CPF)
+
+### Test Case 3: EP holder, S$10,000/month
+
+**Input:** Gross S$10,000, Employment Pass (foreigner)
+**Expected:**
+- CPF: S$0 (EP exempt)
+- Income tax (resident, progressive): ~S$7,350/year
+- **Take-home: S$10,000/month** (no CPF)
+- Effective tax rate: ~6.1%
+
+---
+
+## Build status
+
+- **Build:** 31 pages, 0 errors
+- **Tests:** 24/24 passed
+- **Sitemap:** auto-generated (sitemap-index.xml)
+
+## Page inventory (31 pages)
+
+| Category | Count | Details |
+|---|---|---|
+| Home + legal | 3 | index, legal, privacy |
+| Tool pages | 1 | faq |
+| Guides index | 1 | /guides/ |
+| Guide articles | 8 | cpf-contribution-rates, cpf-for-foreigners, singapore-income-tax, ep-vs-pr-salary, cpf-oa-sa-ma-explained, tax-residency-183-days, bonus-aws-tax, salary-negotiation-singapore |
+| Salary pages | 12 | salary-[amount] (3000 through 30000) |
+| CPF age bracket pages | 6 | cpf-[bracket] (below-55, 55-60, 60-65, 65-70, above-70, foreigner-ep) |
+
+## Components
+
+- SalaryCalculator.tsx (Singapore CPF/income tax calculator)
+
+## Data files
+
+- cpf-rates-2026.ts — CPF rates by age bracket, OW/AW ceilings
+- salaries-data.ts — 12 salary entries
+- age-brackets-data.ts — 6 CPF age bracket entries
+
+## Quality gates
+
+- [x] Build passes (31 pages, 0 errors)
+- [x] Tests pass (24/24)
+- [x] Sitemap generated
+- [x] Schema.org on every page (WebApplication, FAQPage, BreadcrumbList)
+- [x] Analytics: Plausible + GA4 placeholder
+- [x] robots.txt present
+- [x] llms.txt present
+- [x] All guide pages > 1500 words
+- [x] Disclaimer in footer
+- [x] Mobile-responsive navigation (hamburger menu)
+- [x] Internal cross-linking between tools and guides

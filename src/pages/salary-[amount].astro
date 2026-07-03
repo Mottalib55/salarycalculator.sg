@@ -1,0 +1,248 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SalaryCalculator from '../components/SalaryCalculator';
+import { SALARY_LEVELS, type SalaryEntry } from '../lib/salaries-data';
+import { AGE_BRACKETS, type AgeBracketEntry } from '../lib/age-brackets-data';
+import { calculateSalary } from '../lib/engine';
+import '../styles/global.css';
+
+export function getStaticPaths() {
+  return SALARY_LEVELS.map((s) => ({
+    params: { amount: s.slug },
+    props: { salary: s },
+  }));
+}
+
+interface Props {
+  salary: SalaryEntry;
+}
+
+const { salary } = Astro.props;
+const siteUrl = 'https://salarycalculator.sg';
+
+// Calculate net pay for age brackets comparison table
+const ageBracketRows = [
+  { label: '55 and below', age: 30 },
+  { label: '55 to 60', age: 58 },
+  { label: '60 to 65', age: 63 },
+  { label: 'Above 65', age: 68 },
+].map((bracket) => {
+  const result = calculateSalary({
+    monthlyGross: salary.gross,
+    age: bracket.age,
+    residencyType: 'citizen',
+    annualBonus: 0,
+  });
+  return {
+    label: bracket.label,
+    gross: salary.grossFormatted,
+    cpfEmployee: `S$${result.monthlyEmployeeCPF.toLocaleString('en-SG')}`,
+    cpfEmployeeRate: result.cpfRate ? `${result.cpfRate.employee}%` : '0%',
+    cpfEmployer: `S$${result.cpf.employerContribution.toLocaleString('en-SG')}`,
+    net: `S$${result.monthlyTakeHome.toLocaleString('en-SG')}`,
+    monthlyTax: `S$${result.monthlyTax.toLocaleString('en-SG')}`,
+  };
+});
+
+// Main stats (age 30 citizen)
+const mainResult = calculateSalary({
+  monthlyGross: salary.gross,
+  age: 30,
+  residencyType: 'citizen',
+  annualBonus: 0,
+});
+
+function formatSGD(n: number): string {
+  return `S$${n.toLocaleString('en-SG')}`;
+}
+
+const pageTitle = `${salary.grossFormatted} Salary in Singapore - Take Home Pay Calculator 2026`;
+const pageDescription = `Calculate your take-home pay on a ${salary.grossFormatted} monthly salary in Singapore. See CPF contributions, income tax, and net pay by age bracket for 2026.`;
+
+// Schema.org BreadcrumbList
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": siteUrl },
+    { "@type": "ListItem", "position": 2, "name": `${salary.grossFormatted} Salary`, "item": `${siteUrl}/salary-${salary.slug}/` },
+  ],
+};
+
+// Schema.org FAQPage
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": salary.faqs.map((faq) => ({
+    "@type": "Question",
+    "name": faq.question,
+    "acceptedAnswer": { "@type": "Answer", "text": faq.answer },
+  })),
+};
+---
+
+<Layout title={pageTitle} description={pageDescription} canonical={`${siteUrl}/salary-${salary.slug}/`}>
+
+  <!-- Schema.org JSON-LD -->
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+
+  <!-- Breadcrumb Navigation -->
+  <nav aria-label="Breadcrumb" class="mb-8">
+    <ol class="flex items-center gap-2 text-sm text-gray-500">
+      <li><a href="/" class="hover:text-primary transition-colors">Home</a></li>
+      <li class="text-gray-300">/</li>
+      <li class="text-gray-900 font-medium">{salary.grossFormatted} Salary</li>
+    </ol>
+  </nav>
+
+  <!-- Page Header -->
+  <header class="mb-10">
+    <h1 class="text-3xl md:text-4xl font-black text-gray-900 mb-3 leading-tight">
+      {salary.grossFormatted} Salary in Singapore <span class="text-primary">2026</span>
+    </h1>
+    <p class="text-lg text-gray-600 max-w-3xl leading-relaxed">
+      How much take-home pay do you get from a {salary.grossFormatted} monthly salary in Singapore?
+      Here is the full breakdown including CPF contributions and income tax.
+    </p>
+  </header>
+
+  <!-- Stat Cards -->
+  <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+    <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 text-center">
+      <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Monthly Gross</p>
+      <p class="text-3xl font-black text-gray-900">{salary.grossFormatted}</p>
+      <p class="text-xs text-gray-400 mt-1">{formatSGD(salary.gross * 12)} per year</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 text-center">
+      <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Employee CPF</p>
+      <p class="text-3xl font-black text-orange-600">{formatSGD(mainResult.monthlyEmployeeCPF)}</p>
+      <p class="text-xs text-gray-400 mt-1">{mainResult.cpfRate ? `${mainResult.cpfRate.employee}% of capped wage` : 'N/A'}</p>
+    </div>
+    <div class="bg-primary rounded-2xl shadow-md p-6 text-center text-white">
+      <p class="text-sm font-medium text-red-100 uppercase tracking-wider mb-1">Monthly Take-Home</p>
+      <p class="text-3xl font-black">{formatSGD(mainResult.monthlyTakeHome)}</p>
+      <p class="text-xs text-red-200 mt-1">After CPF & tax (age ≤55)</p>
+    </div>
+  </section>
+
+  <!-- Description -->
+  <article class="prose prose-lg max-w-4xl text-gray-700 mb-12">
+    <h2 class="text-2xl font-bold text-gray-900">About a {salary.grossFormatted} Salary in Singapore</h2>
+    <p>{salary.description}</p>
+  </article>
+
+  <!-- Age Bracket Comparison Table -->
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold text-gray-900 mb-4">
+      {salary.grossFormatted} Net Pay by Age Bracket
+    </h2>
+    <p class="text-gray-600 mb-6">
+      CPF contribution rates decrease with age in Singapore. Here is how your take-home pay changes
+      at different age brackets on a {salary.grossFormatted} monthly salary (Singapore Citizen, no bonus).
+    </p>
+    <div class="overflow-x-auto">
+      <table class="w-full bg-white rounded-xl shadow-md border border-gray-100 text-sm">
+        <thead>
+          <tr class="bg-gray-50 border-b border-gray-200">
+            <th class="px-4 py-3 text-left font-semibold text-gray-700">Age Bracket</th>
+            <th class="px-4 py-3 text-right font-semibold text-gray-700">CPF Rate</th>
+            <th class="px-4 py-3 text-right font-semibold text-gray-700">Employee CPF</th>
+            <th class="px-4 py-3 text-right font-semibold text-gray-700">Employer CPF</th>
+            <th class="px-4 py-3 text-right font-semibold text-gray-700">Income Tax</th>
+            <th class="px-4 py-3 text-right font-semibold text-gray-900">Take-Home</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ageBracketRows.map((row, i) => (
+            <tr class={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+              <td class="px-4 py-3 font-medium text-gray-900">{row.label}</td>
+              <td class="px-4 py-3 text-right text-gray-600">{row.cpfEmployeeRate}</td>
+              <td class="px-4 py-3 text-right text-orange-600">{row.cpfEmployee}</td>
+              <td class="px-4 py-3 text-right text-blue-600">{row.cpfEmployer}</td>
+              <td class="px-4 py-3 text-right text-red-600">{row.monthlyTax}</td>
+              <td class="px-4 py-3 text-right font-bold text-green-700">{row.net}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Calculator -->
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold text-gray-900 mb-4">
+      Calculate Your Exact Take-Home Pay
+    </h2>
+    <p class="text-gray-600 mb-6">
+      Use the interactive calculator below to adjust for your exact age, residency status, and annual bonus.
+    </p>
+    <SalaryCalculator client:idle />
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">
+      Frequently Asked Questions - {salary.grossFormatted} Salary
+    </h2>
+    <div class="space-y-4 max-w-3xl">
+      {salary.faqs.map((faq) => (
+        <details class="group bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+          <summary class="flex items-center justify-between px-6 py-4 cursor-pointer font-semibold text-gray-900 hover:bg-gray-50 transition-colors">
+            <span>{faq.question}</span>
+            <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform shrink-0 ml-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <div class="px-6 pb-4 text-gray-600 leading-relaxed">
+            <p>{faq.answer}</p>
+          </div>
+        </details>
+      ))}
+    </div>
+  </section>
+
+  <!-- Cross-links: Other Salary Pages -->
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold text-gray-900 mb-4">Explore Other Salary Levels</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      {SALARY_LEVELS.filter((s) => s.slug !== salary.slug).map((s) => (
+        <a
+          href={`/salary-${s.slug}/`}
+          class="block bg-white rounded-lg border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700 hover:border-primary hover:text-primary transition-colors"
+        >
+          {s.grossFormatted}
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- Cross-links: CPF Age Bracket Pages -->
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold text-gray-900 mb-4">CPF Rates by Age Bracket</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {AGE_BRACKETS.map((ab) => (
+        <a
+          href={`/cpf-${ab.slug}/`}
+          class="block bg-white rounded-lg border border-gray-200 px-4 py-3 text-center font-semibold text-gray-700 hover:border-primary hover:text-primary transition-colors"
+        >
+          {ab.label}
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- Disclaimer -->
+  <aside class="bg-amber-50 border border-amber-200 rounded-xl p-6 text-sm text-amber-800 mb-8">
+    <p class="font-semibold mb-1">Disclaimer</p>
+    <p>
+      This calculator provides estimates based on CPF contribution rates and IRAS income tax brackets for
+      Year of Assessment 2026. Actual amounts may vary depending on individual circumstances, additional
+      reliefs, bonuses, and policy changes. For official figures, consult the
+      <a href="https://www.cpf.gov.sg" target="_blank" rel="noopener noreferrer" class="underline hover:text-amber-900">CPF Board</a>
+      and <a href="https://www.iras.gov.sg" target="_blank" rel="noopener noreferrer" class="underline hover:text-amber-900">IRAS</a>.
+      This site is not affiliated with any government agency.
+    </p>
+  </aside>
+
+</Layout>
